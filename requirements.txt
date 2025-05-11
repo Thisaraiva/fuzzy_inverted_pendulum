@@ -1,0 +1,6 @@
+numpy
+matplotlib
+plotly
+dash
+tensorflow
+keras

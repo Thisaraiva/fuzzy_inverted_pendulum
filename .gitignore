@@ -1,0 +1,18 @@
+# Ignora a pasta do ambiente virtual
+venv/
+env/
+virtualenv/
+.venv/
+
+# Ignora arquivos de cache e bytecode
+pycache/
+__pycache__/
+.cache/
+*.pyc
+*.pyo
+
+# Ignora outros arquivos
+*.tmp
+logs/
+# Arquivos de backup
+*.bak
