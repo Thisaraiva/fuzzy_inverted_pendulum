@@ -24,7 +24,7 @@ print(f"App.py - Total de regras: {len(pendulum_rules) + len(car_rules)} (pendul
 
 # Condições iniciais
 initial_state = [0.0, 0.0, np.pi + 0.1, 0.0]
-simulation_time = 30.0
+simulation_time = 20.0
 n_steps = int(simulation_time / dt)
 time_points = np.linspace(0, simulation_time, n_steps + 1)
 
