@@ -22,6 +22,7 @@ class NeuroFuzzyMLPController:
     def _build_model(self):
         """Define a arquitetura da rede neural MLP."""
         model = keras.Sequential([
+            layers.Input(shape=(self.num_rules,)),
             layers.Dense(64, activation='relu', input_shape=(self.num_rules,)),
             layers.Dense(32, activation='relu'),
             layers.Dense(len(self.index_to_force), activation='softmax')

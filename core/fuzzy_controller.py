@@ -25,9 +25,9 @@ def trapezoidal_mf(x, a, b, c, d):
 
 # --- Conjuntos Fuzzy para o Pêndulo ---
 def pendulum_angle_mf(theta):
-    N = trapezoidal_mf(theta, -0.15, -0.1, -0.03, -0.03)
-    Z = triangular_mf(theta, -0.03, 0, 0.03)
-    P = trapezoidal_mf(theta, 0.03, 0.03, 0.1, 0.15)
+    N = trapezoidal_mf(theta, -0.5, -0.3, -0.1, -0.01)
+    Z = triangular_mf(theta, -0.1, 0, 0.1)
+    P = trapezoidal_mf(theta, 0.01, 0.1, 0.3, 0.5)
     return {'N': N, 'Z': Z, 'P': P}
 
 def pendulum_angular_velocity_mf(theta_dot):

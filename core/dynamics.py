@@ -1,9 +1,9 @@
 import numpy as np
 
 # Parâmetros do sistema (declarados no nível do módulo)
-mc = 0.5  # Massa do carro (kg)
-mp = 0.2  # Massa do pêndulo (kg)
-l = 0.3   # Comprimento do pêndulo (m)
+mc = 1.0  # Massa do carro (kg)
+mp = 0.1  # Massa do pêndulo (kg)
+l = 0.5   # Comprimento do pêndulo (m)
 g = 9.8   # Aceleração da gravidade (m/s^2)
 I = 0.006 # Momento de inércia do pêndulo (kg.m^2)
 dt = 0.02 # Intervalo de tempo (s) - movido para o nível do módulo

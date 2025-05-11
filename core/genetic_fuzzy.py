@@ -89,7 +89,7 @@ def evaluate_chromosome(chromosome, num_steps=200, initial_state=[0.0, 0.0, np.p
         # Penalizar se o pêndulo cair muito (com um valor negativo, mas não infinito)
         if abs(current_state[2] - np.pi) > np.pi / 2:
             fell = True
-            total_reward -= 5  # Penalidade para queda
+            total_reward -= 100  # Penalidade para queda
             break
 
         # Pequena penalidade por passo

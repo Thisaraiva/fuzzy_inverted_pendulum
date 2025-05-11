@@ -24,7 +24,7 @@ print(f"App.py - Total de regras: {len(pendulum_rules) + len(car_rules)} (pendul
 
 # Condições iniciais
 initial_state = [0.0, 0.0, np.pi + 0.1, 0.0]
-simulation_time = 20.0
+simulation_time = 30.0
 n_steps = int(simulation_time / dt)
 time_points = np.linspace(0, simulation_time, n_steps + 1)
 
@@ -205,6 +205,13 @@ def run_simulation(start_clicks, train_clicks, initial_angle_deg, initial_angula
     if controller_type == 'neuro-fuzzy' and not neuro_fuzzy_controller:
         simulation_message = "Neuro-Fuzzy não treinado. Clique em 'Treinar Neuro-Fuzzy' primeiro."
         return (dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update, simulation_message, best_chromosome_data, neuro_fuzzy_controller)
+    
+    # No callback principal, adicione:
+    if controller_type == 'neuro-fuzzy' and not neuro_fuzzy_controller.trained:
+        simulation_message = "Neuro-Fuzzy não treinado. Treinando agora..."
+        training_data = collect_training_data_with_fis(num_episodes=50)
+        neuro_fuzzy_controller.train(training_data, epochs=10)
+        simulation_message = "Neuro-Fuzzy treinado. Iniciando simulação."
 
     for _ in range(n_steps):
         if controller_type == 'fis':
