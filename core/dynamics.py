@@ -1,69 +1,64 @@
-import numpy as np
+# C:\Programacao\Projetos\Python\fuzzy_inverted_pendulum\core\dynamics.py
 
-# Parâmetros do sistema (declarados no nível do módulo)
-mc = 1.0  # Massa do carro (kg)
-mp = 0.1  # Massa do pêndulo (kg)
-l = 0.5   # Comprimento do pêndulo (m)
-g = 9.8   # Aceleração da gravidade (m/s^2)
-I = 0.006 # Momento de inércia do pêndulo (kg.m^2)
-dt = 0.02 # Intervalo de tempo (s) - movido para o nível do módulo
+import numpy as np
+from core.config import MC, MP, L, G, I, DT, FORCE_LIMIT
 
 def calculate_accelerations(state, force):
-    """Calcula as acelerações linear e angular do sistema."""
+    """Calcula as acelerações linear e angular do pêndulo invertido."""
     x, x_dot, theta, theta_dot = state
+    force = np.clip(force, -FORCE_LIMIT, FORCE_LIMIT)  # Limitar a força
 
     sin_theta = np.sin(theta)
     cos_theta = np.cos(theta)
 
-    denominator = (mc + mp) * (I + mp * l**2) - (mp * l * cos_theta)**2
+    # Equações dinâmicas baseadas em Lagrange
+    denom = MC + MP * sin_theta**2
+    if abs(denom) < 1e-6:
+        denom = 1e-6  # Evitar divisão por zero
 
-    if denominator == 0:
-        raise ZeroDivisionError("Denominator is zero, check system parameters or state.")
-
-    # Calcular a aceleração angular (theta_double_dot)
-    numerator_theta = (mp * l * cos_theta * (mp * l * theta_dot**2 * sin_theta + force) +
-                       (mc + mp) * (mp * l * g * sin_theta))
-    theta_double_dot = numerator_theta / denominator
-
-    # Calcular a aceleração linear (x_double_dot)
-    numerator_x = (mp * l * cos_theta * (mp * l * g * sin_theta) -
-                   (I + mp * l**2) * (mp * l * theta_dot**2 * sin_theta + force))
-    x_double_dot = numerator_x / -denominator # Multiplicamos por -1 para ajustar o sinal devido à ordem dos termos no denominador
+    x_double_dot = (force + MP * L * theta_dot**2 * sin_theta - MP * G * sin_theta * cos_theta) / denom
+    theta_double_dot = (G * sin_theta - cos_theta * (force + MP * L * theta_dot**2 * sin_theta) / (MC + MP)) / (L * (1 - MP * cos_theta**2 / (MC + MP)))
 
     return x_double_dot, theta_double_dot
 
-def simulate_inverted_pendulum(state, force, dt):
+def dynamics_derivative(state, force):
+    """Calcula as derivadas do estado."""
+    x, x_dot, theta, theta_dot = state
+    x_double_dot, theta_double_dot = calculate_accelerations(state, force)
+    return np.array([x_dot, x_double_dot, theta_dot, theta_double_dot])
+
+def simulate_inverted_pendulum(state, force, dt=DT):
     """
-    Simula um passo do pêndulo invertido sobre o carro usando Euler integration.
+    Simula um passo do pêndulo invertido usando Runge-Kutta 4 (RK4).
 
     Args:
-        state (list): Lista contendo o estado atual [x, x_dot, theta, theta_dot].
+        state (list): Estado atual [x, x_dot, theta, theta_dot].
         force (float): Força aplicada ao carro (N).
-        dt (float): Intervalo de tempo para a simulação (s).
+        dt (float): Intervalo de tempo (s).
 
     Returns:
-        list: O próximo estado do sistema [x_new, x_dot_new, theta_new, theta_dot_new].
+        list: Próximo estado [x_new, x_dot_new, theta_new, theta_dot_new].
     """
-    x, x_dot, theta, theta_dot = state
+    state = np.array(state)
 
-    x_double_dot, theta_double_dot = calculate_accelerations(state, force)
+    k1 = dynamics_derivative(state, force)
+    k2 = dynamics_derivative(state + 0.5 * dt * k1, force)
+    k3 = dynamics_derivative(state + 0.5 * dt * k2, force)
+    k4 = dynamics_derivative(state + dt * k3, force)
 
-    # Integrar para obter o próximo estado (método de Euler)
-    x_dot_new = x_dot + dt * x_double_dot
-    x_new = x + dt * x_dot_new
-    theta_dot_new = theta_dot + dt * theta_double_dot
-    theta_new = theta + dt * theta_dot_new
+    state_new = state + (dt / 6.0) * (k1 + 2 * k2 + 2 * k3 + k4)
 
-    return [x_new, x_dot_new, theta_new, theta_dot_new]
+    # Limitar theta para evitar overflow
+    state_new[2] = (state_new[2] + np.pi) % (2 * np.pi) - np.pi
+    return state_new.tolist()
 
 if __name__ == '__main__':
-    # Exemplo de simulação (pode ser removido ou adaptado para testes)
     initial_state = [0.0, 0.0, np.pi + 0.1, 0.0]
     total_time = 10.0
-    n_steps = int(total_time / dt)
+    n_steps = int(total_time / DT)
     states_history = [initial_state]
     for _ in range(n_steps):
         current_state = states_history[-1]
-        next_state = simulate_inverted_pendulum(current_state, 0.0, dt)
+        next_state = simulate_inverted_pendulum(current_state, 0.0)
         states_history.append(next_state)
     print("Simulação básica executada.")

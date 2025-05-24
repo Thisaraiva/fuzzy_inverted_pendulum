@@ -1,8 +1,9 @@
-# Dentro de core/fuzzy_controller.py
+# C:\Programacao\Projetos\Python\fuzzy_inverted_pendulum\core\fuzzy_controller.py
 
 import numpy as np
+from core.config import FORCE_WEIGHT_PENDULUM, FORCE_WEIGHT_CAR, FORCE_LIMIT
 
-# --- Funções de Pertinência ---
+# Funções de pertinência
 def triangular_mf(x, a, b, c):
     if a < x <= b:
         return (x - a) / (b - a)
@@ -10,8 +11,7 @@ def triangular_mf(x, a, b, c):
         return (c - x) / (c - b)
     elif x == b:
         return 1
-    else:
-        return 0
+    return 0
 
 def trapezoidal_mf(x, a, b, c, d):
     if b <= x <= c:
@@ -20,62 +20,58 @@ def trapezoidal_mf(x, a, b, c, d):
         return (x - a) / (b - a)
     elif c < x < d:
         return (d - x) / (d - c)
-    else:
-        return 0
+    return 0
 
-# --- Conjuntos Fuzzy para o Pêndulo ---
+# Conjuntos fuzzy ajustados para maior cobertura
 def pendulum_angle_mf(theta):
-    N = trapezoidal_mf(theta, -0.5, -0.3, -0.1, -0.01)
+    N = trapezoidal_mf(theta, -np.pi, -np.pi, -0.2, -0.05)
     Z = triangular_mf(theta, -0.1, 0, 0.1)
-    P = trapezoidal_mf(theta, 0.01, 0.1, 0.3, 0.5)
+    P = trapezoidal_mf(theta, 0.05, 0.2, np.pi, np.pi)
     return {'N': N, 'Z': Z, 'P': P}
 
 def pendulum_angular_velocity_mf(theta_dot):
-    N = trapezoidal_mf(theta_dot, -0.15, -0.1, -0.03, -0.03)
-    Z = triangular_mf(theta_dot, -0.03, 0, 0.03)
-    P = trapezoidal_mf(theta_dot, 0.03, 0.03, 0.1, 0.15)
+    N = trapezoidal_mf(theta_dot, -np.pi, -np.pi, -0.5, -0.1)
+    Z = triangular_mf(theta_dot, -0.2, 0, 0.2)
+    P = trapezoidal_mf(theta_dot, 0.1, 0.5, np.pi, np.pi)
     return {'N': N, 'Z': Z, 'P': P}
 
-# --- Conjuntos Fuzzy para o Carro ---
 def car_position_mf(x):
-    N = trapezoidal_mf(x, -np.inf, -np.inf, -2, 0)
-    Z = triangular_mf(x, -1.5, 0, 1.5)
-    P = trapezoidal_mf(x, 0, 2, np.inf, np.inf)
+    N = trapezoidal_mf(x, -np.inf, -np.inf, -3, -1)
+    Z = triangular_mf(x, -2, 0, 2)
+    P = trapezoidal_mf(x, 1, 3, np.inf, np.inf)
     return {'N': N, 'Z': Z, 'P': P}
 
 def car_velocity_mf(x_dot):
-    N = trapezoidal_mf(x_dot, -np.inf, -np.inf, -2, 0)
-    Z = triangular_mf(x_dot, -1.5, 0, 1.5)
-    P = trapezoidal_mf(x_dot, 0, 2, np.inf, np.inf)
+    N = trapezoidal_mf(x_dot, -np.inf, -np.inf, -2, -0.5)
+    Z = triangular_mf(x_dot, -1, 0, 1)
+    P = trapezoidal_mf(x_dot, 0.5, 2, np.inf, np.inf)
     return {'N': N, 'Z': Z, 'P': P}
 
-# --- Conjuntos Fuzzy para a Força de Saída ---
+# Conjuntos fuzzy para a força de saída
 def output_force_mf():
-    # Pêndulo
-    NL_p = {'range': (-np.inf, -100), 'peak': -100}
-    NM_p = {'range': (-100, -40), 'peak': -40}
-    NS_p = {'range': (-40, -5), 'peak': -5}
-    Z_p = {'range': (-5, 5), 'peak': 0}
-    PS_p = {'range': (5, 40), 'peak': 5}
-    PM_p = {'range': (40, 100), 'peak': 40}
-    PL_p = {'range': (100, np.inf), 'peak': 100}
-    pendulum_force_sets = {'NL': NL_p, 'NM': NM_p, 'NS': NS_p, 'Z': Z_p, 'PS': PS_p, 'PM': PM_p, 'PL': PL_p}
-
-    # Carro
-    NL_c = {'range': (-np.inf, -50), 'peak': -50}
-    NM_c = {'range': (-50, -10), 'peak': -10}
-    NS_c = {'range': (-10, -1), 'peak': -1}
-    Z_c = {'range': (-1, 1), 'peak': 0}
-    PS_c = {'range': (1, 10), 'peak': 1}
-    PM_c = {'range': (10, 50), 'peak': 10}
-    PL_c = {'range': (50, np.inf), 'peak': 50}
-    car_force_sets = {'NL': NL_c, 'NM': NM_c, 'NS': NS_c, 'Z': Z_c, 'PS': PS_c, 'PM': PM_c, 'PL': PL_c}
-
+    pendulum_force_sets = {
+        'NL': {'range': (-np.inf, -50), 'peak': -50},
+        'NM': {'range': (-50, -20), 'peak': -20},
+        'NS': {'range': (-20, -5), 'peak': -5},
+        'Z': {'range': (-5, 5), 'peak': 0},
+        'PS': {'range': (5, 20), 'peak': 5},
+        'PM': {'range': (20, 50), 'peak': 20},
+        'PL': {'range': (50, np.inf), 'peak': 50}
+    }
+    car_force_sets = {
+        'NL': {'range': (-np.inf, -30), 'peak': -30},
+        'NM': {'range': (-30, -10), 'peak': -10},
+        'NS': {'range': (-10, -2), 'peak': -2},
+        'Z': {'range': (-2, 2), 'peak': 0},
+        'PS': {'range': (2, 10), 'peak': 2},
+        'PM': {'range': (10, 30), 'peak': 10},
+        'PL': {'range': (30, np.inf), 'peak': 30}
+    }
     return pendulum_force_sets, car_force_sets
 
 pendulum_force_sets, car_force_sets = output_force_mf()
 
-# --- Base de Regras Fuzzy ---
+# Regras fuzzy
 pendulum_rules = [
     {'if': {'theta': 'N', 'theta_dot': 'N'}, 'then': 'NL'},
     {'if': {'theta': 'N', 'theta_dot': 'Z'}, 'then': 'NS'},
@@ -100,8 +96,6 @@ car_rules = [
     {'if': {'x': 'P', 'x_dot': 'P'}, 'then': 'NL'}
 ]
 
-# --- Mapeamento de índice para nome da força ---
-# Usar apenas 7 índices (0 a 6) para consistência com genetic_fuzzy.py
 index_to_force = {
     0: 'NL',
     1: 'NM',
@@ -129,9 +123,7 @@ def fis_pendulum_control(theta, theta_dot):
         force_set = pendulum_force_sets[rule['force']]
         numerator += rule['degree'] * force_set['peak']
         denominator += rule['degree']
-    if denominator == 0:
-        return 0
-    return numerator / denominator
+    return numerator / denominator if denominator else 0
 
 def fis_car_control(x, x_dot):
     x_mfs = car_position_mf(x)
@@ -150,19 +142,16 @@ def fis_car_control(x, x_dot):
         force_set = car_force_sets[rule['force']]
         numerator += rule['degree'] * force_set['peak']
         denominator += rule['degree']
-    if denominator == 0:
-        return 0
-    return numerator / denominator
+    return numerator / denominator if denominator else 0
 
 def combined_fis_control(state):
     x, x_dot, theta, theta_dot = state
-    force_pendulum = fis_pendulum_control(theta, theta_dot)
+    force_pendulum = fis_pendulum_control(theta - np.pi, theta_dot)  # Ajustar theta para erro em relação a π
     force_car = fis_car_control(x, x_dot)
-    # Uma forma simples de combinar as forças
-    return force_pendulum + 0.5 * force_car
+    combined_force = FORCE_WEIGHT_PENDULUM * force_pendulum + FORCE_WEIGHT_CAR * force_car
+    return np.clip(combined_force, -FORCE_LIMIT, FORCE_LIMIT)
 
 if __name__ == '__main__':
-    # Exemplo de uso do controlador (pode ser removido ou adaptado para testes)
     initial_state = [0.0, 0.0, np.pi + 0.1, 0.0]
     force = combined_fis_control(initial_state)
-    print(f"Força de controle inicial: {force}")
+    print(f"Força de controle inicial: {force:.2f} N")
