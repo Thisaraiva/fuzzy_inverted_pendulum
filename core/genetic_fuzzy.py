@@ -72,13 +72,13 @@ def evaluate_chromosome(chromosome, num_steps=int(SIMULATION_TIME / DT), initial
         theta_dot = abs(current_state[3])
         x_dot = abs(current_state[1])
 
-        # Recompensa prioriza estabilização
-        reward = 1000 * np.exp(-5 * theta_error**2 - 2 * x_error**2 - 0.5 * theta_dot**2 - 0.5 * x_dot**2)
+        # Recompensa mais agressiva para estabilização
+        reward = 1000 * np.exp(-10 * theta_error**2 - 5 * x_error**2 - theta_dot**2 - x_dot**2)
         total_reward += reward
 
         if theta_error > np.pi / 2:
             fell = True
-            total_reward -= 5000
+            total_reward -= 10000  # Penalidade maior por queda
             break
 
     return total_reward if not fell else total_reward

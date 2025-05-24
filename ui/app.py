@@ -126,16 +126,16 @@ def log_simulation(controller_type, initial_state, stabilization_time, success, 
         if os.stat('stabilization_log.csv').st_size == 0:
             writer.writerow(['Timestamp', 'Controller', 'Initial_X', 'Initial_X_dot', 'Initial_Theta', 'Initial_Theta_dot', 'Stabilization_Time', 'Success', 'Mean_Theta_Error', 'Mean_X_Error'])
         writer.writerow([
-            datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3],  # Inclui milissegundos
             controller_type,
-            initial_state[0],
-            initial_state[1],
-            initial_state[2],
-            initial_state[3],
-            stabilization_time if stabilization_time is not None else max_time,
+            f"{initial_state[0]:.3f}",
+            f"{initial_state[1]:.3f}",
+            f"{initial_state[2]:.3f}",
+            f"{initial_state[3]:.3f}",
+            f"{stabilization_time:.3f}" if stabilization_time is not None else f"{max_time:.3f}",
             'True' if success else 'False',
-            mean_theta_error,
-            mean_x_error
+            f"{mean_theta_error:.3f}",
+            f"{mean_x_error:.3f}"
         ])
 
 @app.callback(
@@ -297,7 +297,7 @@ def run_simulation(start_clicks, train_clicks, initial_angle_deg, initial_angula
             progress_data = {'step': step, 'total_steps': n_steps, 'message': f"Passo {step}/{n_steps} ({controller_type.upper()}): Erro angular: {theta_error:.3f} rad, Posição: {x_error:.3f} m"}
 
         if theta_error > np.pi / 2:
-            progress_data['message'] = f"Simulação com {controller_type.upper()} falhou: Pêndulo caiu!"
+            progress_data['message'] = f"Simulação com {controller_type.upper()} falhou: Ângulo excedeu limite de π/2!"
             break
 
     mean_theta_error = np.mean(theta_errors)
@@ -374,7 +374,8 @@ def run_simulation(start_clicks, train_clicks, initial_angle_deg, initial_angula
     stabilization_info = (
         f"Estado Final: x={current_state[0]:.2f} m, x_dot={current_state[1]:.2f} m/s, "
         f"θ={(current_state[2] - np.pi) * 180 / np.pi:.2f}°, θ_dot={current_state[3]:.2f} rad/s\n"
-        f"Erro Médio: θ={mean_theta_error:.3f} rad, x={mean_x_error:.3f} m"
+        f"Erro Médio: θ={mean_theta_error:.3f} rad, x={mean_x_error:.3f} m\n"
+        f"Causa da Falha: {'Ângulo excedeu π/2' if theta_error > np.pi / 2 else 'Não convergiu dentro do limiar'}"
     )
 
     # Atualizar dados de comparação

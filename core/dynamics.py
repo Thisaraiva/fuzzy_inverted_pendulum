@@ -10,14 +10,21 @@ def calculate_accelerations(state, force):
 
     sin_theta = np.sin(theta)
     cos_theta = np.cos(theta)
+    m_total = MC + MP
+    l = L / 2  # Centro de massa do pêndulo
 
-    # Equações dinâmicas baseadas em Lagrange
-    denom = MC + MP * sin_theta**2
+    # Equações dinâmicas derivadas de Lagrange
+    denom = m_total * (I + MP * l**2) - MP**2 * l**2 * cos_theta**2
     if abs(denom) < 1e-6:
         denom = 1e-6  # Evitar divisão por zero
 
-    x_double_dot = (force + MP * L * theta_dot**2 * sin_theta - MP * G * sin_theta * cos_theta) / denom
-    theta_double_dot = (G * sin_theta - cos_theta * (force + MP * L * theta_dot**2 * sin_theta) / (MC + MP)) / (L * (1 - MP * cos_theta**2 / (MC + MP)))
+    x_double_dot = (
+        force * (I + MP * l**2) + MP * l * (MP * l * theta_dot**2 * sin_theta - G * m_total * sin_theta * cos_theta)
+    ) / denom
+
+    theta_double_dot = (
+        -MP * l * cos_theta * force + m_total * (-MP * G * l * sin_theta + MP * l**2 * theta_dot**2 * sin_theta * cos_theta)
+    ) / (denom * l)
 
     return x_double_dot, theta_double_dot
 
@@ -48,8 +55,8 @@ def simulate_inverted_pendulum(state, force, dt=DT):
 
     state_new = state + (dt / 6.0) * (k1 + 2 * k2 + 2 * k3 + k4)
 
-    # Limitar theta para evitar overflow
-    state_new[2] = (state_new[2] + np.pi) % (2 * np.pi) - np.pi
+    # Normalizar theta para manter entre [-π, π]
+    state_new[2] = np.arctan2(np.sin(state_new[2]), np.cos(state_new[2]))
     return state_new.tolist()
 
 if __name__ == '__main__':

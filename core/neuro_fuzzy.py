@@ -4,7 +4,7 @@ import numpy as np
 from tensorflow import keras
 from keras import layers
 from core.dynamics import simulate_inverted_pendulum
-from core.fuzzy_controller import pendulum_angle_mf, pendulum_angular_velocity_mf, car_position_mf, car_velocity_mf, pendulum_rules, car_rules, index_to_force, pendulum_force_sets
+from core.fuzzy_controller import pendulum_angle_mf, pendulum_angular_velocity_mf, car_position_mf, car_velocity_mf, pendulum_rules, car_rules, index_to_force, pendulum_force_sets, car_force_sets
 from core.config import DT, NUM_EPISODES, MAX_STEPS, EPOCHS, BATCH_SIZE, SIMULATION_TIME, FORCE_LIMIT
 
 class NeuroFuzzyMLPController:
@@ -72,10 +72,12 @@ def collect_training_data_with_fis(num_episodes=NUM_EPISODES, max_steps=MAX_STEP
         for _ in range(max_steps):
             from core.fuzzy_controller import combined_fis_control
             force = combined_fis_control(current_state)
-            force_diffs = {idx: min(
-                abs(pendulum_force_sets[force_name]['peak'] - force),
-                abs(car_force_sets[force_name]['peak'] - force)
-            ) for idx, force_name in index_to_force.items()}
+            # Mapear força para o índice mais próximo considerando ambos os conjuntos
+            force_diffs = {}
+            for idx, force_name in index_to_force.items():
+                pendulum_diff = abs(pendulum_force_sets[force_name]['peak'] - force)
+                car_diff = abs(car_force_sets[force_name]['peak'] - force) if force_name in car_force_sets else float('inf')
+                force_diffs[idx] = min(pendulum_diff, car_diff)
             action_index = min(force_diffs, key=force_diffs.get)
             training_data.append((current_state, action_index))
             next_state = simulate_inverted_pendulum(current_state, force)
